@@ -68,6 +68,14 @@ export default function InsightDetail({ section, data, onBack }: InsightDetailPr
               </p>
             </div>
           </div>
+          <motion.button
+            onClick={onBack}
+            className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 text-white/80 text-sm transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            ← 인사이트 목록
+          </motion.button>
         </div>
 
         <motion.div

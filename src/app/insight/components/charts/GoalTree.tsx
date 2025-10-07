@@ -1,7 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ProgressBar } from 'recharts';
 import { GoalData } from '@/types/insightTypes';
 
 interface GoalTreeProps {
@@ -97,7 +96,7 @@ export default function GoalTree({ data }: GoalTreeProps) {
       <div className="bg-white/5 rounded-xl p-4 border border-white/10">
         <h4 className="text-white text-sm font-medium mb-2">목표 분석</h4>
         <p className="text-white/80 text-sm leading-relaxed">
-          메인 목표 "{data.high}"의 현재 달성률은 {completionPercentage}%입니다.
+          메인 목표 &ldquo;{data.high}&rdquo;의 현재 달성률은 {completionPercentage}%입니다.
           {data.sub.length}개의 하위 목표가 설정되어 있으며,
           우선순위는 {data.priority === 'high' ? '높음' : data.priority === 'medium' ? '보통' : '낮음'}으로 설정되어 있습니다.
           {completionPercentage > 70 ? ' 목표 달성이 순조롭게 진행되고 있습니다.' :

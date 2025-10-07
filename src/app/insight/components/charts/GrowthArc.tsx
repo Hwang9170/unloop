@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { GrowthData } from '@/types/insightTypes';
 
 interface GrowthArcProps {

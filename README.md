@@ -10,6 +10,7 @@
 - **현대적 디자인**: Yugo Nakamura에서 영감받은 미니멀하고 세련된 UI
 - **실시간 분석**: 일기 작성 즉시 인사이트 생성
 - **모바일 반응형**: 모든 디바이스에서 최적화된 경험
+- **Supabase 연동**: 이메일/비밀번호 로그인 및 일기 데이터 영구 저장
 
 ## 📊 인사이트 카테고리
 
@@ -96,7 +97,29 @@ Create a `.env.local` file in the root directory:
 ```env
 # Optional: You can set a default API key
 NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ```
+
+## 🔐 Supabase Setup
+
+1. Supabase 프로젝트를 생성하고 Authentication에서 Email/Password 공급자를 활성화합니다.
+2. 아래 SQL을 실행해 일기 데이터를 저장할 테이블을 만듭니다.
+
+```sql
+create table if not exists public.diary_entries (
+  id uuid primary key,
+  user_id uuid references auth.users(id) on delete cascade,
+  content text not null,
+  insights jsonb not null,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists diary_entries_user_id_idx on public.diary_entries (user_id);
+```
+
+3. 프로젝트의 `Project Settings > API`에서 `Project URL`과 `anon public` 키를 복사해 `.env.local`에 설정하세요.
+4. Google 로그인을 사용하려면 Supabase 대시보드의 `Authentication > Providers > Google`에서 OAuth Client ID/Secret을 등록한 뒤 활성화하세요. Google Cloud 콘솔에서 승인된 리디렉션 URL은 `https://<your-project-ref>.supabase.co/auth/v1/callback`을 입력하면 됩니다.
 
 ## 🎨 Design Philosophy
 
