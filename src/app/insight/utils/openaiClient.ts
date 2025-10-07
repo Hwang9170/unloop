@@ -1,7 +1,9 @@
 import { InsightData } from '@/types/insightTypes';
+import { SupportedLanguage } from '@/types/language';
 
 export async function analyzeDiaryEntry(
-  diaryText: string
+  diaryText: string,
+  language: SupportedLanguage
 ): Promise<InsightData> {
   if (!diaryText.trim()) {
     throw new Error('일기 내용을 입력해주세요.');
@@ -13,7 +15,7 @@ export async function analyzeDiaryEntry(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ diaryText }),
+      body: JSON.stringify({ diaryText, language }),
     });
 
     if (!response.ok) {

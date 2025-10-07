@@ -8,6 +8,7 @@ import { getSectionSummary, getMockInsightData } from './utils/parseInsightData'
 import { SectionType } from '@/types/insightTypes';
 import InsightCard from './components/InsightCard';
 import InsightDetail from './components/InsightDetail';
+import { useLanguage } from '@/context/LanguageContext';
 
 const sections: SectionType[] = [
   'emotion', 'goal', 'cognitive', 'relation',
@@ -24,6 +25,29 @@ export default function InsightPage() {
     error,
     setError
   } = useInsightStore();
+  const { language } = useLanguage();
+  const isKorean = language === 'ko';
+  const labels = isKorean
+    ? {
+        errorTitle: '오류가 발생했습니다',
+        errorButton: '다시 시도',
+        loading: '인사이트를 로딩 중...',
+        headingSubtitleDefault: '당신의 하루를 8가지 관점에서 분석했습니다',
+        headingSubtitleDetail: '상세 분석',
+        backToList: '← 인사이트 목록',
+        backToHome: '← 새 일기 작성',
+        cardsHint: '각 카드를 클릭하면 더 자세한 분석을 볼 수 있습니다',
+      }
+    : {
+        errorTitle: 'An error occurred',
+        errorButton: 'Try again',
+        loading: 'Loading insights...',
+        headingSubtitleDefault: 'We analyzed your day from eight perspectives',
+        headingSubtitleDetail: 'Detailed analysis',
+        backToList: '← Back to insights',
+        backToHome: '← Write a new diary',
+        cardsHint: 'Select any card to explore the detailed insights',
+      };
 
   useEffect(() => {
     if (!insights) {
@@ -47,9 +71,9 @@ export default function InsightPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-light mb-4">오류가 발생했습니다</h2>
+          <div className="text-center">
+            <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-light mb-4">{labels.errorTitle}</h2>
           <p className="text-gray-300 mb-6">{error}</p>
           <button
             onClick={() => {
@@ -58,7 +82,7 @@ export default function InsightPage() {
             }}
             className="px-6 py-3 bg-purple-500 hover:bg-purple-600 rounded-lg transition-colors"
           >
-            다시 시도
+            {labels.errorButton}
           </button>
         </div>
       </div>
@@ -70,7 +94,7 @@ export default function InsightPage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-300">인사이트를 로딩 중...</p>
+          <p className="text-gray-300">{labels.loading}</p>
         </div>
       </div>
     );
@@ -101,7 +125,7 @@ export default function InsightPage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
               >
-                {activeSection ? '상세 분석' : '당신의 하루를 8가지 관점에서 분석했습니다'}
+                {activeSection ? labels.headingSubtitleDetail : labels.headingSubtitleDefault}
               </motion.p>
             </div>
 
@@ -114,7 +138,7 @@ export default function InsightPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              {activeSection ? '← 인사이트 목록' : '← 새 일기 작성'}
+              {activeSection ? labels.backToList : labels.backToHome}
             </motion.button>
           </div>
 
@@ -132,9 +156,10 @@ export default function InsightPage() {
                   <InsightCard
                     key={section}
                     section={section}
-                    summary={getSectionSummary(insights, section)}
+                    summary={getSectionSummary(insights, section, language)}
                     onClick={() => handleCardClick(section)}
                     index={index}
+                    language={language}
                   />
                 ))}
               </motion.div>
@@ -150,6 +175,7 @@ export default function InsightPage() {
                   section={activeSection}
                   data={insights}
                   onBack={handleBackToCards}
+                  language={language}
                 />
               </motion.div>
             )}
@@ -163,7 +189,7 @@ export default function InsightPage() {
               className="mt-12 text-center"
             >
               <p className="text-gray-400 text-sm">
-                각 카드를 클릭하면 더 자세한 분석을 볼 수 있습니다
+                {labels.cardsHint}
               </p>
             </motion.div>
           )}

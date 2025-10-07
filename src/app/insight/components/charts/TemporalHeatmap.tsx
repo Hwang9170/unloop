@@ -2,62 +2,115 @@
 
 import { motion } from 'framer-motion';
 import { TemporalData } from '@/types/insightTypes';
+import { SupportedLanguage } from '@/types/language';
 
 interface TemporalHeatmapProps {
   data: TemporalData;
+  language: SupportedLanguage;
 }
 
-export default function TemporalHeatmap({ data }: TemporalHeatmapProps) {
-  const timeSlots = [
-    '새벽', '아침', '오전', '점심', '오후', '저녁', '밤', '늦은밤'
-  ];
+const timeDefinitions = [
+  { key: 'dawn', ko: '새벽', en: 'Dawn' },
+  { key: 'morning', ko: '아침', en: 'Morning' },
+  { key: 'late_morning', ko: '오전', en: 'Late morning' },
+  { key: 'noon', ko: '점심', en: 'Midday' },
+  { key: 'afternoon', ko: '오후', en: 'Afternoon' },
+  { key: 'evening', ko: '저녁', en: 'Evening' },
+  { key: 'night', ko: '밤', en: 'Night' },
+  { key: 'late_night', ko: '늦은밤', en: 'Late night' },
+];
 
-  const weekdays = [
-    '월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'
-  ];
+const weekdayDefinitions = [
+  { key: 'mon', ko: '월요일', en: 'Monday' },
+  { key: 'tue', ko: '화요일', en: 'Tuesday' },
+  { key: 'wed', ko: '수요일', en: 'Wednesday' },
+  { key: 'thu', ko: '목요일', en: 'Thursday' },
+  { key: 'fri', ko: '금요일', en: 'Friday' },
+  { key: 'sat', ko: '토요일', en: 'Saturday' },
+  { key: 'sun', ko: '일요일', en: 'Sunday' },
+];
 
-  const energyPercentage = Math.round(data.energy_level * 100);
+function normalizeValue(value: string, defs: Array<{ key: string; ko: string; en: string }>): string {
+  const found = defs.find((def) => def.ko === value || def.en.toLowerCase() === value.toLowerCase());
+  return found?.key ?? defs[0].key;
+}
 
-  const getTimeIntensity = (time: string) => {
-    if (time === data.time) return 1;
-    const currentIndex = timeSlots.indexOf(data.time);
-    const timeIndex = timeSlots.indexOf(time);
+export default function TemporalHeatmap({ data, language }: TemporalHeatmapProps) {
+  const isKorean = language === 'ko';
+  const selectedTimeKey = normalizeValue(data.time, timeDefinitions);
+  const selectedWeekdayKey = normalizeValue(data.weekday, weekdayDefinitions);
+  const timeOptions = timeDefinitions.map((def) => ({ key: def.key, label: def[language] }));
+  const weekdayOptions = weekdayDefinitions.map((def) => ({ key: def.key, label: def[language] }));
+  const selectedTimeLabel = timeDefinitions.find((def) => def.key === selectedTimeKey)?.[language] ?? data.time;
+  const selectedWeekdayLabel = weekdayDefinitions.find((def) => def.key === selectedWeekdayKey)?.[language] ?? data.weekday;
+
+  const energyPercentage = Math.round((data.energy_level ?? 0) * 100);
+
+  const getTimeIntensity = (timeKey: string) => {
+    const currentIndex = timeDefinitions.findIndex((def) => def.key === selectedTimeKey);
+    const timeIndex = timeDefinitions.findIndex((def) => def.key === timeKey);
+    if (currentIndex === -1 || timeIndex === -1) {
+      return 0.3;
+    }
     const distance = Math.abs(currentIndex - timeIndex);
-    return Math.max(0, 1 - (distance * 0.3));
+    return Math.max(0, 1 - distance * 0.3);
   };
 
-  const getWeekdayIntensity = (weekday: string) => {
-    return weekday === data.weekday ? 1 : Math.random() * 0.6 + 0.2;
+  const getWeekdayIntensity = (weekdayKey: string) => {
+    return weekdayKey === selectedWeekdayKey ? 1 : Math.random() * 0.6 + 0.2;
   };
+
+  const energyDescriptor = isKorean
+    ? energyPercentage > 70
+      ? ' 활기찬 상태'
+      : energyPercentage > 50
+        ? ' 보통 상태'
+        : energyPercentage > 30
+          ? ' 다소 피곤한 상태'
+          : ' 휴식이 필요한 상태'
+    : energyPercentage > 70
+      ? ' full of energy'
+      : energyPercentage > 50
+        ? ' in a balanced state'
+        : energyPercentage > 30
+          ? ' a little tired'
+          : ' in need of rest';
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-white text-xl font-medium mb-6">시간 패턴 분석</h3>
+        <h3 className="text-white text-xl font-medium mb-6">
+          {isKorean ? '시간 패턴 분석' : 'Temporal rhythm'}
+        </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <h4 className="text-white text-sm font-medium mb-4">시간대별 활동</h4>
+            <h4 className="text-white text-sm font-medium mb-4">
+              {isKorean ? '시간대별 활동' : 'Activity by time of day'}
+            </h4>
             <div className="grid grid-cols-4 gap-2">
-              {timeSlots.map((time, index) => {
-                const intensity = getTimeIntensity(time);
+              {timeOptions.map(({ key, label }, index) => {
+                const intensity = getTimeIntensity(key);
+                const isActive = key === selectedTimeKey;
                 return (
                   <motion.div
-                    key={time}
+                    key={label}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.1, duration: 0.5 }}
                     className={`
                       p-3 rounded-lg text-center text-xs border border-white/20
-                      ${time === data.time ? 'bg-purple-500' : 'bg-white/10'}
+                      ${isActive ? 'bg-purple-500' : 'bg-white/10'}
                     `}
                     style={{
-                      backgroundColor: time === data.time ? undefined : `rgba(147, 51, 234, ${intensity * 0.6})`
+                      backgroundColor: isActive ? undefined : `rgba(147, 51, 234, ${intensity * 0.6})`,
                     }}
                   >
-                    <div className="text-white font-medium">{time}</div>
-                    {time === data.time && (
-                      <div className="text-white/80 text-xs mt-1">현재</div>
+                    <div className="text-white font-medium">{label}</div>
+                    {isActive && (
+                      <div className="text-white/80 text-xs mt-1">
+                        {isKorean ? '현재' : 'Now'}
+                      </div>
                     )}
                   </motion.div>
                 );
@@ -66,24 +119,27 @@ export default function TemporalHeatmap({ data }: TemporalHeatmapProps) {
           </div>
 
           <div>
-            <h4 className="text-white text-sm font-medium mb-4">요일별 패턴</h4>
+            <h4 className="text-white text-sm font-medium mb-4">
+              {isKorean ? '요일별 패턴' : 'Weekly cadence'}
+            </h4>
             <div className="space-y-2">
-              {weekdays.map((weekday, index) => {
-                const intensity = getWeekdayIntensity(weekday);
+              {weekdayOptions.map(({ key, label }, index) => {
+                const intensity = getWeekdayIntensity(key);
+                const isActive = key === selectedWeekdayKey;
                 return (
                   <motion.div
-                    key={weekday}
+                    key={label}
                     initial={{ opacity: 0, x: 30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.5 + index * 0.1, duration: 0.5 }}
                     className="flex items-center justify-between p-2 rounded-lg bg-white/10 border border-white/20"
                   >
-                    <span className={`text-sm ${weekday === data.weekday ? 'text-white font-medium' : 'text-white/80'}`}>
-                      {weekday}
+                    <span className={`text-sm ${isActive ? 'text-white font-medium' : 'text-white/80'}`}>
+                      {label}
                     </span>
                     <div className="w-16 bg-white/20 rounded-full h-2">
                       <motion.div
-                        className={`h-2 rounded-full ${weekday === data.weekday ? 'bg-purple-400' : 'bg-white/60'}`}
+                        className={`h-2 rounded-full ${isActive ? 'bg-purple-400' : 'bg-white/60'}`}
                         initial={{ width: 0 }}
                         animate={{ width: `${intensity * 100}%` }}
                         transition={{ delay: 1 + index * 0.1, duration: 0.8 }}
@@ -103,8 +159,10 @@ export default function TemporalHeatmap({ data }: TemporalHeatmapProps) {
             transition={{ delay: 1.2, duration: 0.6 }}
             className="bg-white/10 rounded-xl p-4 border border-white/20 text-center"
           >
-            <div className="text-white/80 text-sm mb-2">현재 시간</div>
-            <div className="text-2xl font-light text-white">{data.time}</div>
+            <div className="text-white/80 text-sm mb-2">
+              {isKorean ? '현재 시간' : 'Current time'}
+            </div>
+            <div className="text-2xl font-light text-white">{selectedTimeLabel}</div>
           </motion.div>
 
           <motion.div
@@ -113,8 +171,10 @@ export default function TemporalHeatmap({ data }: TemporalHeatmapProps) {
             transition={{ delay: 1.4, duration: 0.6 }}
             className="bg-white/10 rounded-xl p-4 border border-white/20 text-center"
           >
-            <div className="text-white/80 text-sm mb-2">요일</div>
-            <div className="text-2xl font-light text-white">{data.weekday}</div>
+            <div className="text-white/80 text-sm mb-2">
+              {isKorean ? '요일' : 'Weekday'}
+            </div>
+            <div className="text-2xl font-light text-white">{selectedWeekdayLabel}</div>
           </motion.div>
 
           <motion.div
@@ -123,7 +183,9 @@ export default function TemporalHeatmap({ data }: TemporalHeatmapProps) {
             transition={{ delay: 1.6, duration: 0.6 }}
             className="bg-white/10 rounded-xl p-4 border border-white/20 text-center"
           >
-            <div className="text-white/80 text-sm mb-2">에너지 레벨</div>
+            <div className="text-white/80 text-sm mb-2">
+              {isKorean ? '에너지 레벨' : 'Energy level'}
+            </div>
             <div className="text-2xl font-light text-white mb-2">{energyPercentage}%</div>
             <div className="w-full bg-white/20 rounded-full h-2">
               <motion.div
@@ -138,14 +200,25 @@ export default function TemporalHeatmap({ data }: TemporalHeatmapProps) {
       </div>
 
       <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-        <h4 className="text-white text-sm font-medium mb-2">시간 패턴 요약</h4>
+        <h4 className="text-white text-sm font-medium mb-2">
+          {isKorean ? '시간 패턴 요약' : 'Summary'}
+        </h4>
         <p className="text-white/80 text-sm leading-relaxed">
-          오늘은 <strong>{data.weekday}</strong> <strong>{data.time}</strong>에 일기를 작성했습니다.
-          현재 에너지 레벨은 {energyPercentage}%로,
-          {energyPercentage > 70 ? ' 활기찬 상태' :
-           energyPercentage > 50 ? ' 보통 상태' :
-           energyPercentage > 30 ? ' 다소 피곤한 상태' : ' 휴식이 필요한 상태'}를 보이고 있습니다.
-          {data.season && ` ${data.season} 계절의 영향으로 전반적인 기분과 활동 패턴에 변화가 있을 수 있습니다.`}
+          {isKorean ? '오늘은 ' : 'You wrote this diary on '}
+          <strong>{selectedWeekdayLabel}</strong>
+          {isKorean ? ' ' : ' during the '}
+          <strong>{selectedTimeLabel}</strong>
+          {isKorean ? '에 일기를 작성했습니다. 현재 에너지 레벨은 ' : ' window. Your current energy level is '}
+          {energyPercentage}%
+          {energyDescriptor}.
+          {data.season && (
+            <>
+              {' '}
+              {isKorean
+                ? `${data.season} 계절의 영향으로 전반적인 기분과 활동 패턴에 변화가 있을 수 있습니다.`
+                : `Seasonal context (${data.season}) may also be shaping your mood and routines.`}
+            </>
+          )}
         </p>
       </div>
     </div>

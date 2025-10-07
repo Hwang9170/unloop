@@ -7,6 +7,7 @@ import { useInsightStore } from './insight/store/insightState';
 import { analyzeDiaryEntry } from './insight/utils/openaiClient';
 import { getSectionSummary } from './insight/utils/parseInsightData';
 import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import LoginPanel from '@/components/auth/LoginPanel';
 import { saveDiaryEntry, fetchDiaryEntries, DiaryRow } from './insight/utils/supabaseDiary';
 import type { InsightData } from '@/types/insightTypes';
@@ -21,6 +22,49 @@ export default function Home() {
   const router = useRouter();
   const { setInsights, setCurrentEntry, setError, setLoading } = useInsightStore();
   const { user, supabase, loading: authLoading, signOut } = useSupabaseAuth();
+  const { language } = useLanguage();
+  const isKorean = language === 'ko';
+  const labels = isKorean
+    ? {
+        heroTagline: '나의 하루를 쓰면, 나를 이해하는 데이터가 된다',
+        heroSubtitle: 'AI 기반 자기성찰 플랫폼',
+        loggedInTitle: '현재 로그인한 계정',
+        logout: '로그아웃',
+        diaryLabel: '오늘의 일기',
+        demoButton: '데모 텍스트 불러오기',
+        diaryPlaceholder: '오늘 하루는 어떠셨나요? 자유롭게 적어보세요...',
+        charCountSuffix: '글자',
+        analyzeButton: '인사이트 분석하기',
+        analyzing: '분석 중...',
+        savedTitle: '저장된 일기',
+        savedSubtitle: '과거에 분석한 일기를 다시 확인해보세요.',
+        refresh: '새로고침',
+        savedLoading: '일기를 불러오는 중...',
+        savedEmpty: '아직 저장된 일기가 없습니다. 첫 번째 일기를 분석해보세요!',
+        savedEmotion: '주요 감정',
+        savedNoDate: '날짜 정보 없음',
+        heroCategories: ['감정', '목표', '사고패턴', '관계', '시간리듬', '정체성', '성장', '메타'],
+      }
+    : {
+        heroTagline: 'When you write your day, you unlock insights about yourself',
+        heroSubtitle: 'AI-powered self-reflection platform',
+        loggedInTitle: 'Signed-in account',
+        logout: 'Log out',
+        diaryLabel: "Today's Diary",
+        demoButton: 'Load demo text',
+        diaryPlaceholder: 'How was your day? Write freely...',
+        charCountSuffix: 'characters',
+        analyzeButton: 'Analyze insights',
+        analyzing: 'Analyzing...',
+        savedTitle: 'Saved Diaries',
+        savedSubtitle: 'Revisit the insights from your past entries.',
+        refresh: 'Refresh',
+        savedLoading: 'Loading diaries...',
+        savedEmpty: 'No diaries saved yet. Try analyzing your first entry!',
+        savedEmotion: 'Primary emotion',
+        savedNoDate: 'No date available',
+        heroCategories: ['Emotion', 'Goal', 'Thinking', 'Relationships', 'Time Rhythm', 'Identity', 'Growth', 'Meta'],
+      };
 
   const refreshSavedEntries = useCallback(async () => {
     if (!user) {
@@ -34,11 +78,17 @@ export default function Home() {
       setSavedEntries(entries);
       setEntriesError(null);
     } catch (refreshError) {
-      setEntriesError(refreshError instanceof Error ? refreshError.message : '일기 목록을 불러오지 못했습니다.');
+      setEntriesError(
+        refreshError instanceof Error
+          ? refreshError.message
+          : isKorean
+            ? '일기 목록을 불러오지 못했습니다.'
+            : 'Failed to load your diary entries.'
+      );
     } finally {
       setEntriesLoading(false);
     }
-  }, [supabase, user]);
+  }, [supabase, user, isKorean]);
 
   useEffect(() => {
     if (!user) {
@@ -52,7 +102,7 @@ export default function Home() {
 
   const handleSelectEntry = (entry: DiaryRow) => {
     if (!entry.keywords) {
-      setError('저장된 인사이트 데이터가 없습니다. 다시 분석해주세요.');
+      setError(isKorean ? '저장된 인사이트 데이터가 없습니다. 다시 분석해주세요.' : 'No insights saved for this diary. Please analyze again.');
       return;
     }
 
@@ -72,7 +122,9 @@ export default function Home() {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-300">인증 정보를 확인하는 중...</p>
+          <p className="text-gray-300">
+            {isKorean ? '인증 정보를 확인하는 중...' : 'Checking your session...'}
+          </p>
         </div>
       </div>
     );
@@ -80,12 +132,12 @@ export default function Home() {
 
   const handleAnalyze = async () => {
     if (!diaryText.trim()) {
-      setError('일기 내용을 입력해주세요.');
+      setError(isKorean ? '일기 내용을 입력해주세요.' : 'Please enter your diary entry.');
       return;
     }
 
     if (!user) {
-      setFormError('로그인 후에 일기를 분석하고 저장할 수 있습니다.');
+      setFormError(isKorean ? '로그인 후에 일기를 분석하고 저장할 수 있습니다.' : 'Please log in to analyze and save your diary.');
       return;
     }
 
@@ -95,7 +147,7 @@ export default function Home() {
     setError(null);
 
     try {
-      const insights = await analyzeDiaryEntry(diaryText);
+      const insights = await analyzeDiaryEntry(diaryText, language);
       const entry = {
         id: crypto.randomUUID(),
         content: diaryText,
@@ -107,8 +159,8 @@ export default function Home() {
       setCurrentEntry(entry);
       const emotionEntries = Object.entries(insights.emotion ?? {}).sort(([, a], [, b]) => b - a);
       const dominantEmotion = emotionEntries[0]?.[0] ?? null;
-      const emotionSummary = getSectionSummary(insights, 'emotion');
-      const goalSummary = getSectionSummary(insights, 'goal');
+      const emotionSummary = getSectionSummary(insights, 'emotion', language);
+      const goalSummary = getSectionSummary(insights, 'goal', language);
 
       await saveDiaryEntry(supabase, {
         id: entry.id,
@@ -124,7 +176,13 @@ export default function Home() {
       await refreshSavedEntries();
       router.push('/insight');
     } catch (error) {
-      setError(error instanceof Error ? error.message : '분석 중 오류가 발생했습니다.');
+      setError(
+        error instanceof Error
+          ? error.message
+          : isKorean
+            ? '분석 중 오류가 발생했습니다.'
+            : 'An error occurred while analyzing your diary.'
+      );
       if (error instanceof Error) {
         setFormError(error.message);
       }
@@ -172,10 +230,10 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
             >
-              나의 하루를 쓰면, 나를 이해하는 데이터가 된다
+              {labels.heroTagline}
               <br />
               <span className="text-lg text-gray-400 mt-4 block">
-                AI 기반 자기성찰 플랫폼
+                {labels.heroSubtitle}
               </span>
             </motion.p>
           </div>
@@ -189,14 +247,14 @@ export default function Home() {
             >
               <div className="flex justify-between items-center bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10">
                 <div>
-                  <p className="text-sm text-gray-400">현재 로그인한 계정</p>
+                  <p className="text-sm text-gray-400">{labels.loggedInTitle}</p>
                   <p className="text-lg text-white">{user.email}</p>
                 </div>
                 <button
                   onClick={signOut}
                   className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-colors text-sm"
                 >
-                  로그아웃
+                  {labels.logout}
                 </button>
               </div>
 
@@ -204,24 +262,24 @@ export default function Home() {
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <label className="block text-sm font-medium text-gray-300">
-                      오늘의 일기
+                      {labels.diaryLabel}
                     </label>
                     <button
                       onClick={handleDemo}
                       className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
                     >
-                      데모 텍스트 불러오기
+                      {labels.demoButton}
                     </button>
                   </div>
                   <textarea
                     value={diaryText}
                     onChange={(e) => setDiaryText(e.target.value)}
-                    placeholder="오늘 하루는 어떠셨나요? 자유롭게 적어보세요..."
+                    placeholder={labels.diaryPlaceholder}
                     rows={12}
                     className="w-full px-4 py-3 bg-white/10 rounded-xl border border-white/20 text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
                   />
                   <div className="text-xs text-gray-400 mt-2 text-right">
-                    {diaryText.length} 글자
+                    {diaryText.length.toLocaleString()} {labels.charCountSuffix}
                   </div>
                 </div>
 
@@ -241,19 +299,19 @@ export default function Home() {
                   {isAnalyzing ? (
                     <div className="flex items-center justify-center space-x-2">
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>분석 중...</span>
+                      <span>{labels.analyzing}</span>
                     </div>
                   ) : (
-                    '인사이트 분석하기'
+                    labels.analyzeButton
                   )}
                 </motion.button>
               </div>
 
-            <div className="text-center">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
-                {['감정', '목표', '사고패턴', '관계', '시간리듬', '정체성', '성장', '메타'].map((item, index) => (
-                  <motion.div
-                    key={item}
+              <div className="text-center">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
+                  {labels.heroCategories.map((item, index) => (
+                    <motion.div
+                      key={item}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.8 + index * 0.1, duration: 0.5 }}
@@ -261,80 +319,80 @@ export default function Home() {
                     >
                       <span className="text-sm text-gray-300">{item}</span>
                     </motion.div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-lg font-medium text-white">저장된 일기</h3>
-                  <p className="text-sm text-gray-400 mt-1">
-                    과거에 분석한 일기를 다시 확인해보세요.
+              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-medium text-white">{labels.savedTitle}</h3>
+                    <p className="text-sm text-gray-400 mt-1">
+                      {labels.savedSubtitle}
+                    </p>
+                  </div>
+                  <button
+                    onClick={refreshSavedEntries}
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 text-sm transition-colors"
+                  >
+                    {labels.refresh}
+                  </button>
+                </div>
+
+                {entriesError && (
+                  <p className="text-sm text-red-300 mb-4">
+                    {entriesError}
                   </p>
-                </div>
-                <button
-                  onClick={refreshSavedEntries}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 text-sm transition-colors"
-                >
-                  새로고침
-                </button>
+                )}
+
+                {entriesLoading ? (
+                  <div className="flex items-center space-x-3 text-gray-300">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>{labels.savedLoading}</span>
+                  </div>
+                ) : savedEntries.length === 0 ? (
+                  <p className="text-sm text-gray-400">
+                    {labels.savedEmpty}
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {savedEntries.map((entry) => {
+                      const createdDate = entry.created_at ? new Date(entry.created_at) : null;
+                      const formattedDate = createdDate
+                        ? createdDate.toLocaleString(isKorean ? 'ko-KR' : 'en-US', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        : labels.savedNoDate;
+
+                      return (
+                        <button
+                          key={entry.id}
+                          onClick={() => handleSelectEntry(entry)}
+                          className="w-full text-left bg-white/10 hover:bg-white/15 transition-colors border border-white/10 rounded-2xl px-5 py-4"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-gray-300">{formattedDate}</span>
+                            {entry.emotion && (
+                              <span className="text-xs bg-purple-500/30 text-purple-200 px-3 py-1 rounded-full">
+                                {labels.savedEmotion}: {entry.emotion}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-white text-sm line-clamp-2">
+                            {entry.summary || entry.insight || `${entry.text.slice(0, 80)}${entry.text.length > 80 ? '…' : ''}`}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-
-              {entriesError && (
-                <p className="text-sm text-red-300 mb-4">
-                  {entriesError}
-                </p>
-              )}
-
-              {entriesLoading ? (
-                <div className="flex items-center space-x-3 text-gray-300">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>일기를 불러오는 중...</span>
-                </div>
-              ) : savedEntries.length === 0 ? (
-                <p className="text-sm text-gray-400">
-                  아직 저장된 일기가 없습니다. 첫 번째 일기를 분석해보세요!
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {savedEntries.map((entry) => {
-                    const createdDate = entry.created_at ? new Date(entry.created_at) : null;
-                    const formattedDate = createdDate
-                      ? createdDate.toLocaleString('ko-KR', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
-                      : '날짜 정보 없음';
-
-                    return (
-                      <button
-                        key={entry.id}
-                        onClick={() => handleSelectEntry(entry)}
-                        className="w-full text-left bg-white/10 hover:bg-white/15 transition-colors border border-white/10 rounded-2xl px-5 py-4"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-300">{formattedDate}</span>
-                          {entry.emotion && (
-                            <span className="text-xs bg-purple-500/30 text-purple-200 px-3 py-1 rounded-full">
-                              주요 감정: {entry.emotion}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-white text-sm line-clamp-2">
-                          {entry.summary || entry.insight || `${entry.text.slice(0, 80)}${entry.text.length > 80 ? '…' : ''}`}
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </motion.div>
-        ) : (
+            </motion.div>
+          ) : (
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}

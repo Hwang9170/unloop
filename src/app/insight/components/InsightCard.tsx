@@ -3,15 +3,19 @@
 import { motion } from 'framer-motion';
 import { SectionType } from '@/types/insightTypes';
 import { getSectionTitle, getSectionIcon, getSectionColor } from '../utils/parseInsightData';
+import { SupportedLanguage } from '@/types/language';
 
 interface InsightCardProps {
   section: SectionType;
   summary: string;
   onClick: () => void;
   index: number;
+  language: SupportedLanguage;
 }
 
-export default function InsightCard({ section, summary, onClick, index }: InsightCardProps) {
+export default function InsightCard({ section, summary, onClick, index, language }: InsightCardProps) {
+  const detailLabel = language === 'ko' ? '자세히 보기' : 'View details';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30, scale: 0.9 }}
@@ -53,7 +57,7 @@ export default function InsightCard({ section, summary, onClick, index }: Insigh
           </div>
 
           <h3 className="text-white text-lg font-medium mb-3">
-            {getSectionTitle(section)}
+            {getSectionTitle(section, language)}
           </h3>
 
           <p className="text-white/80 text-sm leading-relaxed">
@@ -61,7 +65,7 @@ export default function InsightCard({ section, summary, onClick, index }: Insigh
           </p>
 
           <div className="mt-4 flex items-center text-white/60 text-xs">
-            <span>자세히 보기</span>
+            <span>{detailLabel}</span>
             <motion.span
               className="ml-1"
               animate={{ x: [0, 4, 0] }}

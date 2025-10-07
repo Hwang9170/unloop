@@ -2,11 +2,14 @@
 
 import { FormEvent, useState } from 'react';
 import { useSupabaseAuth } from '@/context/SupabaseAuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 type AuthMode = 'signin' | 'signup';
 
 export default function LoginPanel() {
   const { signInWithPassword, signUpWithPassword, signInWithGoogle } = useSupabaseAuth();
+  const { language } = useLanguage();
+  const isKorean = language === 'ko';
   const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,6 +17,39 @@ export default function LoginPanel() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const labels = isKorean
+    ? {
+        signin: '로그인',
+        signup: '회원가입',
+        email: '이메일',
+        password: '비밀번호',
+        passwordPlaceholder: '최소 6자 이상 입력하세요',
+        submitProcessing: '처리 중...',
+        submitError: '이메일과 비밀번호를 모두 입력해주세요.',
+        signupSuccess: '회원가입이 완료되었습니다. 확인 메일을 확인해주세요.',
+        googleError: 'Google 로그인 중 오류가 발생했습니다.',
+        separator: '또는',
+        googleButton: 'Google 계정으로 계속하기',
+        toggleToSignup: '아직 계정이 없으신가요? 회원가입',
+        toggleToSignin: '이미 계정이 있으신가요? 로그인',
+        continueWith: 'Google 계정으로 계속하기',
+      }
+    : {
+        signin: 'Sign In',
+        signup: 'Sign Up',
+        email: 'Email',
+        password: 'Password',
+        passwordPlaceholder: 'Use at least 6 characters',
+        submitProcessing: 'Processing...',
+        submitError: 'Please provide both email and password.',
+        signupSuccess: 'Sign-up complete. Please check your inbox for a confirmation email.',
+        googleError: 'An error occurred while signing in with Google.',
+        separator: 'or',
+        googleButton: 'Continue with Google',
+        toggleToSignup: "Don't have an account yet? Sign up",
+        toggleToSignin: 'Already have an account? Sign in',
+        continueWith: 'Continue with Google',
+      };
 
   const toggleMode = () => {
     setMode((prev) => (prev === 'signin' ? 'signup' : 'signin'));
@@ -25,7 +61,7 @@ export default function LoginPanel() {
     event.preventDefault();
 
     if (!email.trim() || !password.trim()) {
-      setError('이메일과 비밀번호를 모두 입력해주세요.');
+      setError(labels.submitError);
       return;
     }
 
@@ -39,7 +75,7 @@ export default function LoginPanel() {
     if (authError) {
       setError(authError);
     } else if (mode === 'signup') {
-      setSuccessMessage('회원가입이 완료되었습니다. 확인 메일을 확인해주세요.');
+      setSuccessMessage(labels.signupSuccess);
     }
 
     setIsSubmitting(false);
@@ -54,7 +90,7 @@ export default function LoginPanel() {
       if (googleError instanceof Error) {
         setError(googleError.message);
       } else {
-        setError('Google 로그인 중 오류가 발생했습니다.');
+        setError(labels.googleError);
       }
     } finally {
       setIsGoogleSubmitting(false);
@@ -64,13 +100,13 @@ export default function LoginPanel() {
   return (
     <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 max-w-md mx-auto">
       <h2 className="text-3xl font-light text-center mb-6">
-        {mode === 'signin' ? '로그인' : '회원가입'}
+        {mode === 'signin' ? labels.signin : labels.signup}
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            이메일
+            {labels.email}
           </label>
           <input
             type="email"
@@ -83,13 +119,13 @@ export default function LoginPanel() {
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            비밀번호
+            {labels.password}
           </label>
           <input
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            placeholder="최소 6자 이상 입력하세요"
+            placeholder={labels.passwordPlaceholder}
             className="w-full px-4 py-3 bg-white/10 rounded-xl border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
           />
         </div>
@@ -111,14 +147,14 @@ export default function LoginPanel() {
           disabled={isSubmitting}
           className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-xl font-medium text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? '처리 중...' : mode === 'signin' ? '로그인' : '회원가입'}
+          {isSubmitting ? labels.submitProcessing : mode === 'signin' ? labels.signin : labels.signup}
         </button>
       </form>
 
       <div className="mt-6">
         <div className="flex items-center justify-center space-x-3 mb-4">
           <span className="h-px w-16 bg-white/10" />
-          <span className="text-xs text-gray-400">또는</span>
+          <span className="text-xs text-gray-400">{labels.separator}</span>
           <span className="h-px w-16 bg-white/10" />
         </div>
         <button
@@ -137,18 +173,18 @@ export default function LoginPanel() {
             <path fill="#fbbc04" d="M119.6 323.7c-10.3-30.5-10.3-63.4 0-94l-90.5-69.7c-39.2 77.8-39.2 169.7 0 247.5l90.5-69.8z"/>
             <path fill="#ea4335" d="M272 107.7c39.9-.6 78.2 14.1 107.6 41.5l80.2-80.2C424.7 24.6 355.5-1.7 272 0 162.5 0 72.6 64.5 29.1 150.9l90.5 69.7C141 156.4 201.1 108.5 272 107.7z"/>
           </svg>
-          <span>Google 계정으로 계속하기</span>
+          <span>{labels.continueWith}</span>
         </button>
       </div>
 
       <div className="mt-6 text-center text-sm text-gray-400">
         {mode === 'signin' ? (
           <button onClick={toggleMode} className="text-purple-300 hover:text-purple-200 transition-colors">
-            아직 계정이 없으신가요? 회원가입
+            {labels.toggleToSignup}
           </button>
         ) : (
           <button onClick={toggleMode} className="text-purple-300 hover:text-purple-200 transition-colors">
-            이미 계정이 있으신가요? 로그인
+            {labels.toggleToSignin}
           </button>
         )}
       </div>

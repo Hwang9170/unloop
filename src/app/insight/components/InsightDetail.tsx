@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { SectionType, InsightData } from '@/types/insightTypes';
 import { getSectionTitle, getSectionIcon, getSectionColor } from '../utils/parseInsightData';
+import { SupportedLanguage } from '@/types/language';
 import EmotionChart from './charts/EmotionChart';
 import GoalTree from './charts/GoalTree';
 import CognitiveChart from './charts/CognitiveChart';
@@ -16,27 +17,31 @@ interface InsightDetailProps {
   section: SectionType;
   data: InsightData;
   onBack: () => void;
+  language: SupportedLanguage;
 }
 
-export default function InsightDetail({ section, data, onBack }: InsightDetailProps) {
+export default function InsightDetail({ section, data, onBack, language }: InsightDetailProps) {
+  const detailSubtitle = language === 'ko' ? '상세 분석 결과' : 'Detailed insights';
+  const backLabel = language === 'ko' ? '← 인사이트 목록' : '← Back to insights';
+
   const renderChart = () => {
     switch (section) {
       case 'emotion':
-        return <EmotionChart data={data.emotion} />;
+        return <EmotionChart data={data.emotion} language={language} />;
       case 'goal':
-        return <GoalTree data={data.goal} />;
+        return <GoalTree data={data.goal} language={language} />;
       case 'cognitive':
-        return <CognitiveChart data={data.cognitive} />;
+        return <CognitiveChart data={data.cognitive} language={language} />;
       case 'relation':
-        return <RelationGraph data={data.relation} />;
+        return <RelationGraph data={data.relation} language={language} />;
       case 'temporal':
-        return <TemporalHeatmap data={data.temporal} />;
+        return <TemporalHeatmap data={data.temporal} language={language} />;
       case 'identity':
-        return <IdentityWheel data={data.identity} />;
+        return <IdentityWheel data={data.identity} language={language} />;
       case 'growth':
-        return <GrowthArc data={data.growth} />;
+        return <GrowthArc data={data.growth} language={language} />;
       case 'meta':
-        return <MetaTimeline data={data.meta} />;
+        return <MetaTimeline data={data.meta} language={language} />;
       default:
         return null;
     }
@@ -61,10 +66,10 @@ export default function InsightDetail({ section, data, onBack }: InsightDetailPr
             <span className="text-4xl">{getSectionIcon(section)}</span>
             <div>
               <h2 className="text-3xl font-light text-white">
-                {getSectionTitle(section)}
+                {getSectionTitle(section, language)}
               </h2>
               <p className="text-white/80 mt-1">
-                상세 분석 결과
+                {detailSubtitle}
               </p>
             </div>
           </div>
@@ -74,7 +79,7 @@ export default function InsightDetail({ section, data, onBack }: InsightDetailPr
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            ← 인사이트 목록
+            {backLabel}
           </motion.button>
         </div>
 

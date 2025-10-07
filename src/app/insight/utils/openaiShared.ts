@@ -1,8 +1,16 @@
+import { SupportedLanguage } from '@/types/language';
 import { InsightData } from '@/types/insightTypes';
 
-export const SYSTEM_PROMPT = `
-당신은 일기 내용을 분석하여 8개 영역의 인사이트를 추출하는 전문가입니다.
-다음 형태의 JSON을 정확히 반환해주세요:
+export function buildSystemPrompt(language: SupportedLanguage): string {
+  const languageInstruction = language === 'ko'
+    ? '모든 텍스트 값을 자연스러운 한국어로 작성하세요.'
+    : 'Write every text value in natural English.';
+
+  return `
+You are an expert analyst who extracts 8 categories of insights from diary entries.
+The user's diary may be written in Korean or English. Regardless of the input language,
+follow the requested output language. ${languageInstruction}
+Return JSON that follows this schema exactly:
 
 {
   "emotion": {
@@ -16,51 +24,52 @@ export const SYSTEM_PROMPT = `
     "anticipation": 0.0-1.0
   },
   "goal": {
-    "high": "최상위 목표",
-    "sub": ["하위목표1", "하위목표2"],
+    "high": "Main goal",
+    "sub": ["Sub goal 1", "Sub goal 2"],
     "completion": 0.0-1.0,
     "priority": "high/medium/low"
   },
   "cognitive": {
-    "tone": "긍정/부정/중립",
-    "causal_sentences": 숫자,
+    "tone": "positive/negative/neutral",
+    "causal_sentences": integer,
     "complexity_score": 0.0-1.0,
     "reflection_depth": 0.0-1.0
   },
   "relation": {
-    "main_person": "주요인물",
-    "emotion": "관계감정",
-    "interaction_type": "소통방식",
+    "main_person": "Main person",
+    "emotion": "Relationship emotion",
+    "interaction_type": "Interaction type",
     "closeness_level": 0.0-1.0
   },
   "temporal": {
-    "time": "시간대",
-    "weekday": "요일",
-    "season": "계절",
+    "time": "Time of day",
+    "weekday": "Weekday",
+    "season": "Season",
     "energy_level": 0.0-1.0
   },
   "identity": {
-    "roles": ["역할1", "역할2"],
-    "adjectives": ["형용사1", "형용사2"],
-    "core_values": ["가치1", "가치2"],
+    "roles": ["Role 1", "Role 2"],
+    "adjectives": ["Adjective 1", "Adjective 2"],
+    "core_values": ["Value 1", "Value 2"],
     "self_perception": 0.0-1.0
   },
   "growth": {
     "reflection": 0.0-1.0,
     "stability": 0.0-1.0,
-    "learning_mentions": 숫자,
-    "challenge_response": "대응방식"
+    "learning_mentions": integer,
+    "challenge_response": "Response style"
   },
   "meta": {
-    "word_count": 숫자,
-    "platform": "추정플랫폼",
-    "writing_duration": 분,
+    "word_count": integer,
+    "platform": "Writing platform",
+    "writing_duration": minutes,
     "mood_consistency": 0.0-1.0
   }
 }
 
-JSON만 반환하고 다른 설명은 포함하지 마세요.
+Return ONLY valid JSON without any extra explanation or commentary.
 `;
+}
 
 export function parseOpenAIInsight(content: string): InsightData {
   try {
