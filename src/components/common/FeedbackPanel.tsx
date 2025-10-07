@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, ValidationError } from '@formspree/react';
 import { useLanguage } from '@/context/LanguageContext';
 import { motion } from 'framer-motion';
@@ -11,11 +11,13 @@ export default function FeedbackPanel() {
   const { language } = useLanguage();
   const isKorean = language === 'ko';
   const [hasOpened, setHasOpened] = useState(false);
-  const [state, handleSubmit] = useForm(FORM_ID, {
-    onSuccess() {
+  const [state, handleSubmit] = useForm(FORM_ID);
+
+  useEffect(() => {
+    if (state.succeeded) {
       setHasOpened(false);
     }
-  });
+  }, [state.succeeded]);
 
   const labels = isKorean
     ? {
