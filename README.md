@@ -52,11 +52,11 @@ npm run dev
 
 ### Usage
 
-1. **API Key 입력**: OpenAI API Key를 입력하세요
+1. **로그인**: 이메일/비밀번호 또는 Google 계정으로 로그인하세요
 2. **일기 작성**: 오늘의 일기를 자유롭게 작성하세요
 3. **분석 실행**: "인사이트 분석하기" 버튼을 클릭하세요
 4. **결과 확인**: 8개 카테고리의 인사이트 카드를 확인하세요
-5. **상세 보기**: 각 카드를 클릭하여 상세 시각화를 확인하세요
+5. **히스토리**: 저장된 일기 목록에서 다시 선택해 상세 분석을 확인하세요
 
 ## 🛠 Tech Stack
 
@@ -95,8 +95,7 @@ src/
 Create a `.env.local` file in the root directory:
 
 ```env
-# Optional: You can set a default API key
-NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=sk-...
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 # Optional: Override OAuth redirect base URL (use production domain in Vercel)
@@ -112,8 +111,11 @@ NEXT_PUBLIC_SUPABASE_REDIRECT_URL=https://unloop-rho.vercel.app
 create table if not exists public.diary_entries (
   id uuid primary key,
   user_id uuid references auth.users(id) on delete cascade,
-  content text not null,
-  insights jsonb not null,
+  text text not null,
+  summary text,
+  emotion text,
+  keywords jsonb not null,
+  insight text,
   created_at timestamptz not null default timezone('utc', now())
 );
 

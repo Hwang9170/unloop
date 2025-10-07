@@ -13,14 +13,13 @@ import type { InsightData } from '@/types/insightTypes';
 
 export default function Home() {
   const [diaryText, setDiaryText] = useState('');
-  const [apiKey, setApiKey] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [savedEntries, setSavedEntries] = useState<DiaryRow[]>([]);
   const [entriesLoading, setEntriesLoading] = useState(false);
   const [entriesError, setEntriesError] = useState<string | null>(null);
   const router = useRouter();
-  const { setInsights, setCurrentEntry, setApiKey: storeApiKey, setError, setLoading } = useInsightStore();
+  const { setInsights, setCurrentEntry, setError, setLoading } = useInsightStore();
   const { user, supabase, loading: authLoading, signOut } = useSupabaseAuth();
 
   const refreshSavedEntries = useCallback(async () => {
@@ -80,8 +79,8 @@ export default function Home() {
   }
 
   const handleAnalyze = async () => {
-    if (!diaryText.trim() || !apiKey.trim()) {
-      setError('일기 내용과 API Key를 모두 입력해주세요.');
+    if (!diaryText.trim()) {
+      setError('일기 내용을 입력해주세요.');
       return;
     }
 
@@ -96,7 +95,7 @@ export default function Home() {
     setError(null);
 
     try {
-      const insights = await analyzeDiaryEntry(diaryText, apiKey);
+      const insights = await analyzeDiaryEntry(diaryText);
       const entry = {
         id: crypto.randomUUID(),
         content: diaryText,
@@ -106,8 +105,6 @@ export default function Home() {
 
       setInsights(insights);
       setCurrentEntry(entry);
-      storeApiKey(apiKey);
-
       const emotionEntries = Object.entries(insights.emotion ?? {}).sort(([, a], [, b]) => b - a);
       const dominantEmotion = emotionEntries[0]?.[0] ?? null;
       const emotionSummary = getSectionSummary(insights, 'emotion');
@@ -205,19 +202,6 @@ export default function Home() {
 
               <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
-                    OpenAI API Key
-                  </label>
-                  <input
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="sk-..."
-                    className="w-full px-4 py-3 bg-white/10 rounded-xl border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
-                  />
-                </div>
-
-                <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <label className="block text-sm font-medium text-gray-300">
                       오늘의 일기
@@ -249,7 +233,7 @@ export default function Home() {
 
                 <motion.button
                   onClick={handleAnalyze}
-                  disabled={isAnalyzing || !diaryText.trim() || !apiKey.trim() || !user}
+                  disabled={isAnalyzing || !diaryText.trim() || !user}
                   className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-600 rounded-xl font-medium text-white transition-all duration-300 disabled:cursor-not-allowed"
                   whileHover={!isAnalyzing ? { scale: 1.02 } : {}}
                   whileTap={!isAnalyzing ? { scale: 0.98 } : {}}

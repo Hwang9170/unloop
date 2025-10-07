@@ -7,7 +7,6 @@ interface InsightState {
   activeSection: SectionType | null;
   isLoading: boolean;
   error: string | null;
-  apiKey: string;
 
   // Actions
   setCurrentEntry: (entry: DiaryEntry) => void;
@@ -15,7 +14,6 @@ interface InsightState {
   setActiveSection: (section: SectionType | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  setApiKey: (key: string) => void;
   clearInsights: () => void;
 }
 
@@ -25,14 +23,12 @@ export const useInsightStore = create<InsightState>((set) => ({
   activeSection: null,
   isLoading: false,
   error: null,
-  apiKey: '',
 
   setCurrentEntry: (entry) => set({ currentEntry: entry }),
   setInsights: (insights) => set({ insights }),
   setActiveSection: (section) => set({ activeSection: section }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
-  setApiKey: (apiKey) => set({ apiKey }),
   clearInsights: () => set({
     insights: null,
     currentEntry: null,
