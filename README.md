@@ -99,6 +99,8 @@ Create a `.env.local` file in the root directory:
 NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key_here
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+# Optional: Override OAuth redirect base URL (use production domain in Vercel)
+NEXT_PUBLIC_SUPABASE_REDIRECT_URL=https://unloop-rho.vercel.app
 ```
 
 ## 🔐 Supabase Setup
@@ -119,7 +121,7 @@ create index if not exists diary_entries_user_id_idx on public.diary_entries (us
 ```
 
 3. 프로젝트의 `Project Settings > API`에서 `Project URL`과 `anon public` 키를 복사해 `.env.local`에 설정하세요.
-4. Google 로그인을 사용하려면 Supabase 대시보드의 `Authentication > Providers > Google`에서 OAuth Client ID/Secret을 등록한 뒤 활성화하세요. Google Cloud 콘솔에서 승인된 리디렉션 URL은 `https://<your-project-ref>.supabase.co/auth/v1/callback`을 입력하면 됩니다.
+4. Google 로그인을 사용하려면 Supabase 대시보드의 `Authentication > Providers > Google`에서 OAuth Client ID/Secret을 등록한 뒤 활성화하세요. Google Cloud 콘솔에서 승인된 리디렉션 URL은 `https://<your-project-ref>.supabase.co/auth/v1/callback`을 입력하면 됩니다. 서비스 도메인(`https://unloop-rho.vercel.app` 등)도 Google OAuth의 승인된 자바스크립트 원본/리디렉션에 추가해야 합니다.
 
 ## 🎨 Design Philosophy
 

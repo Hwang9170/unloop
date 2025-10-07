@@ -92,7 +92,11 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   };
 
   const signInWithGoogle = async () => {
-    const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const redirectOverride = process.env.NEXT_PUBLIC_SUPABASE_REDIRECT_URL;
+    const redirectTo =
+      typeof window !== 'undefined'
+        ? redirectOverride || window.location.origin
+        : redirectOverride;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
