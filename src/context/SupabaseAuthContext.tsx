@@ -93,10 +93,18 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
 
   const signInWithGoogle = async () => {
     const redirectOverride = process.env.NEXT_PUBLIC_SUPABASE_REDIRECT_URL;
-    const redirectTo =
-      typeof window !== 'undefined'
-        ? redirectOverride || window.location.origin
-        : redirectOverride;
+    const redirectTo = (() => {
+      if (typeof window === 'undefined') {
+        return redirectOverride;
+      }
+
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocalhost) {
+        return window.location.origin;
+      }
+
+      return redirectOverride || window.location.origin;
+    })();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
