@@ -16,33 +16,43 @@ const LANGUAGE_STORAGE_KEY = 'unlooped-language';
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<SupportedLanguage>('ko');
 
+  const getSafeStorage = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    try {
+      return window.localStorage;
+    } catch {
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
-    const stored = typeof window !== 'undefined' ? window.localStorage.getItem(LANGUAGE_STORAGE_KEY) : null;
+    const storage = getSafeStorage();
+    const stored = storage?.getItem(LANGUAGE_STORAGE_KEY) ?? null;
     if (stored === 'ko' || stored === 'en') {
       setLanguageState(stored);
     } else if (typeof navigator !== 'undefined') {
       const navLang = navigator.language?.toLowerCase().startsWith('en') ? 'en' : 'ko';
       setLanguageState(navLang);
-      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, navLang);
+      storage?.setItem(LANGUAGE_STORAGE_KEY, navLang);
     }
-  }, []);
+  }, [getSafeStorage]);
 
   const setLanguage = useCallback((next: SupportedLanguage) => {
     setLanguageState(next);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, next);
-    }
-  }, []);
+    const storage = getSafeStorage();
+    storage?.setItem(LANGUAGE_STORAGE_KEY, next);
+  }, [getSafeStorage]);
 
   const toggleLanguage = useCallback(() => {
     setLanguageState((prev) => {
       const next = prev === 'ko' ? 'en' : 'ko';
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(LANGUAGE_STORAGE_KEY, next);
-      }
+      const storage = getSafeStorage();
+      storage?.setItem(LANGUAGE_STORAGE_KEY, next);
       return next;
     });
-  }, []);
+  }, [getSafeStorage]);
 
   const value = useMemo<LanguageContextValue>(() => ({
     language,
