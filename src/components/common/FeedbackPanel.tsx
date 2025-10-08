@@ -54,7 +54,7 @@ export default function FeedbackPanel() {
       </motion.div>
     );
   }
-  
+
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
@@ -69,7 +69,6 @@ export default function FeedbackPanel() {
             <h3 className="text-lg font-medium">{labels.title}</h3>
             <p className="text-sm text-white/70 mt-1">{labels.subtitle}</p>
           </div>
-
           <div className="space-y-2">
             <label className="block text-xs text-white/70" htmlFor="email">
               {labels.emailLabel}
